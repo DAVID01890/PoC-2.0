@@ -1,0 +1,50 @@
+# ===========================
+# Seguridad — NO versionar
+# ===========================
+.env
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+*.egg-info/
+.eggs/
+dist/
+build/
+*.whl
+
+# Base de datos local
+backend/local.db
+backend/local.db-shm
+backend/local.db-wal
+*.db
+*.db-shm
+*.db-wal
+
+# Tests
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node / Frontend
+Frontend/node_modules/
+Frontend/.next/
+Frontend/dist/
+Frontend/build/
+Frontend/.turbo/
+
+# IDEs
+.vscode/settings.json
+.idea/
+*.suo
+*.user
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,15 @@
+# Auth
+MIN_PASSWORD_LENGTH: int = 6
+
+# Cache
+USER_CACHE_TTL_SECONDS: float = 30.0
+USER_CACHE_MAXSIZE: int = 256
+PROYECTO_LIST_CACHE_TTL_SECONDS: float = 15.0
+PROYECTO_LIST_CACHE_MAXSIZE: int = 1
+
+# MCP Server
+MCP_SERVER_HOST: str = "0.0.0.0"
+MCP_SERVER_PORT: int = 8101
+
+# Gemini
+GEMINI_MODEL_NAME: str = "gemini-2.5-flash"

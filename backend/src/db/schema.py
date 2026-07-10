@@ -1,0 +1,30 @@
+from src.idp.infrastructure.schema import CREATE_USERS_TABLE
+from src.scrum.infrastructure.schema import (
+    CREATE_PROYECTOS_TABLE,
+    CREATE_SPRINTS_TABLE,
+    CREATE_HISTORIAS_TABLE,
+    CREATE_TAREAS_TECNICAS_TABLE,
+    CREATE_PROYECTO_MIEMBROS_TABLE,
+    CREATE_OUTBOX_EVENTS_TABLE,
+)
+
+CREATE_TABLES = (
+    CREATE_PROYECTOS_TABLE
+    + CREATE_SPRINTS_TABLE
+    + CREATE_HISTORIAS_TABLE
+    + CREATE_TAREAS_TECNICAS_TABLE
+    + CREATE_USERS_TABLE
+    + CREATE_PROYECTO_MIEMBROS_TABLE
+    + CREATE_OUTBOX_EVENTS_TABLE
+    + """
+CREATE TABLE IF NOT EXISTS proyecto_read_model (
+    proyecto_id TEXT PRIMARY KEY,
+    nombre TEXT NOT NULL,
+    total_historias INTEGER NOT NULL DEFAULT 0,
+    total_story_points INTEGER NOT NULL DEFAULT 0,
+    sprint_actual_id TEXT,
+    sprint_actual_nombre TEXT,
+    updated_at TEXT NOT NULL
+);
+"""
+)

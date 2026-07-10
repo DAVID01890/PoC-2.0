@@ -1,0 +1,49 @@
+# Task: Build Application based on Velzon Template
+
+- [x] Analyze Template Structure and Components
+    - [x] Review `package.json` dependencies
+    - [x] Explore `src` directory structure
+    - [x] Understand Routing system (`src/Routes`)
+    - [x] Understand Layout system (`src/Layouts`)
+    - [x] Review Redux setup (`src/slices`)
+- [x] Create Implementation Plan
+- [/] Provide Feedback and Recommendations to User
+- [x] Set up Development Environment and Run
+    - [x] Install dependencies (`npm install --legacy-peer-deps`)
+    - [x] Run development server (`npm start`)
+- [/] Optimization and Simplification
+    - [x] Phase 0: Safety & Backup (Git Init)
+    - [x] Phase 1: Clean up Routes and Pages
+    - [x] Phase 2: Remove Category 3 Components (ApexCharts, FullCalendar, CKEditor removed)
+    - [x] Phase 3: Reduce Layout and Theme Options (Vertical/Horizontal, Default/Modern, Default/Purple)
+    - [x] Phase 4: Adjusting Supported Languages (Spanish & English only, Spanish default)
+    - [x] Phase 5: Customizer Button in Topbar (Reactivated RightSidebar, added toggle to Header)
+    - [x] Phase 6: Internal Simulator (Offline mode enabled, created configuration guide)
+    - [x] Phase 7: Telemetry/Call-Home Investigation (No tracking found, all clean)
+    - [x] Phase 8: Topbar Cleanup (Remove Search, Language, WebApps, Cart; Hide Notifications)
+    - [x] Phase 9: Topbar Refinement (Header height 60px, Transparent profile background)
+- [x] Session: Sidebar Refinement
+    - [x] Replace Hamburger Icon with standard Remix Icon
+    - [x] Eliminate CSS transitions for Sidebar, Topbar, and Main Content
+- [x] Session: Footer Refinement
+    - [x] Make footer fixed at the bottom of the viewport
+- [x] Session: Breadcrumb Refinement
+    - [x] Make page title and breadcrumb sticky below header (pixel-perfect alignment)
+- [x] Session: Routing Refinement
+    - [x] Rename /starter and /dashboard to /home
+    - [x] Update redirects and sidebar links
+- [x] Session: Footer Refinement (Final)
+    - [x] Reduce footer height to 50px
+    - [x] Update footer text and padding
+- [x] Session: Horizontal Layout Fix
+    - [x] Create pre-fix snapshot (git commit)
+    - [x] Adjust sticky breadcrumb for horizontal layout (added offset)
+- [x] Session: Branding Audit (Whitelabeling)
+    - [x] Search for "Velzon" and "Themesbrand" references
+    - [x] Categorize results in branding_audit.md
+- [x] Session: Rebranding Implementation (Luma)
+    - [x] Update titles, copyrights, and metadata
+    - [x] Replace logos and Favicon
+- [x] Session: Layout Persistence Fix
+    - [x] Create pre-fix snapshot (git commit)
+    - [x] Implement localStorage persistence in Redux slices (utils, reducer, thunks)

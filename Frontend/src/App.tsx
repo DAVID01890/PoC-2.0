@@ -25,10 +25,14 @@ import Route from './Routes';
 // // init firebase backend
 // initFirebaseBackend(firebaseConfig);
 
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 function App() {
   return (
     <React.Fragment>
       <Route />
+      <ToastContainer autoClose={2000} limit={5} closeButton={true} position="top-right" theme="colored" />
     </React.Fragment>
   );
 }

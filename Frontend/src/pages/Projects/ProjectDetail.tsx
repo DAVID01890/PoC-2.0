@@ -10,6 +10,7 @@ import { StoriesTable } from './StoriesTable';
 import { SprintsTable } from './SprintsTable';
 import { KanbanTable } from './KanbanTable';
 import ConfirmModal from '../../Components/Common/ConfirmModal';
+import { toast } from 'react-toastify';
 
 const ProjectDetail = () => {
     const { id } = useParams<{ id: string }>();
@@ -21,12 +22,21 @@ const ProjectDetail = () => {
     const [kanbanViewMode, setKanbanViewMode] = useState<'board' | 'table'>('board');
     const [backlogViewMode, setBacklogViewMode] = useState<'cards' | 'table'>('cards');
     const [draggingStoryId, setDraggingStoryId] = useState<string | null>(null);
+    
     const setError = (msg: string) => {
         setErrorState(msg);
         if (msg) {
+            toast.error(msg, {
+                position: "top-right",
+                autoClose: 2000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+            });
             setTimeout(() => {
                 setErrorState(prev => prev === msg ? "" : prev);
-            }, 4000);
+            }, 2000);
         }
     };
     const [activeTab, setActiveTab] = useState<string>('1');
@@ -63,7 +73,23 @@ const ProjectDetail = () => {
     const [selectedStoryId, setSelectedStoryId] = useState<string>("");
     const [submitLoading, setSubmitLoading] = useState<boolean>(false);
     const [draggedOverSprintId, setDraggedOverSprintId] = useState<string>("");
-    const [successMessage, setSuccessMessage] = useState<string>("");
+    const [, setSuccessMessageState] = useState<string>("");
+    const setSuccessMessage = (msg: string) => {
+        setSuccessMessageState(msg);
+        if (msg) {
+            toast.success(msg, {
+                position: "top-right",
+                autoClose: 2000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+            });
+            setTimeout(() => {
+                setSuccessMessageState(prev => prev === msg ? "" : prev);
+            }, 2000);
+        }
+    };
     const [expandedSprints, setExpandedSprints] = useState<Record<string, boolean>>({});
     const [draggedOverColumnStatus, setDraggedOverColumnStatus] = useState<string>("");
     const [showCompletedStories, setShowCompletedStories] = useState<boolean>(false);
@@ -843,9 +869,6 @@ const ProjectDetail = () => {
             <div className="page-content">
                 <Container fluid>
                     <BreadCrumb title={project?.nombre || "Detalle"} pageTitle="Proyecto" link={`/projects/${id}/backlog`} />
-
-                    {error && <Alert color="danger" toggle={() => setError("")}>{error}</Alert>}
-                    {successMessage && <Alert color="success" toggle={() => setSuccessMessage("")}>{successMessage}</Alert>}
 
 
 

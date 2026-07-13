@@ -36,6 +36,8 @@ class UpdateHistoriaRequest:
 @dataclass
 class CreateSprintRequest:
     nombre: str
+    fecha_inicio: datetime | None = None
+    fecha_fin: datetime | None = None
 
 
 @dataclass

@@ -181,12 +181,21 @@ async def add_historia(proyecto_id: str, titulo: str, story_points: int) -> dict
 
 
 @mcp.tool()
-async def create_sprint(proyecto_id: str, nombre: str) -> dict:
+async def create_sprint(
+    proyecto_id: str,
+    nombre: str,
+    fecha_inicio: str | None = None,
+    fecha_fin: str | None = None,
+) -> dict:
     """Crea un sprint en un proyecto."""
     await _init()
     scrum = ScrumFacade(_get_proyecto_repo())
     try:
-        result = await scrum.create_sprint(proyecto_id, nombre)
+        dt_inicio = datetime.fromisoformat(fecha_inicio) if fecha_inicio else None
+        dt_fin = datetime.fromisoformat(fecha_fin) if fecha_fin else None
+        result = await scrum.create_sprint(
+            proyecto_id, nombre, fecha_inicio=dt_inicio, fecha_fin=dt_fin
+        )
         if result is None:
             return {"error": "Proyecto no encontrado"}
         sprints = result["sprints"]

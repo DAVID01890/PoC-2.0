@@ -88,15 +88,36 @@ def test_create_sprint() -> None:
     with _client() as client:
         headers = _auth_headers(client)
         proyecto = client.post(f"{PREFIX}/proyectos", json={"nombre": "P"}, headers=headers).json()
+        
+        # Test default creation
         response = client.post(
             f"{PREFIX}/proyectos/{proyecto['id']}/sprints",
             json={"nombre": "Sprint 1"},
             headers=headers,
         )
-    assert response.status_code == 201
-    data = response.json()
-    assert len(data["sprints"]) == 1
-    assert data["sprints"][0]["nombre"] == "Sprint 1"
+        assert response.status_code == 201
+        data = response.json()
+        assert len(data["sprints"]) == 1
+        assert data["sprints"][0]["nombre"] == "Sprint 1"
+        assert data["sprints"][0]["fecha_inicio"] is None
+        assert data["sprints"][0]["fecha_fin"] is None
+
+        # Test creation with start/end dates
+        response_dates = client.post(
+            f"{PREFIX}/proyectos/{proyecto['id']}/sprints",
+            json={
+                "nombre": "Sprint 2",
+                "fecha_inicio": "2026-07-10T00:00:00Z",
+                "fecha_fin": "2026-07-24T00:00:00Z"
+            },
+            headers=headers,
+        )
+        assert response_dates.status_code == 201
+        data_dates = response_dates.json()
+        # Find sprint 2 in response
+        sprint2 = next(s for s in data_dates["sprints"] if s["nombre"] == "Sprint 2")
+        assert sprint2["fecha_inicio"] == "2026-07-10T00:00:00+00:00"
+        assert sprint2["fecha_fin"] == "2026-07-24T00:00:00+00:00"
 
 
 def test_add_historia_to_sprint() -> None:

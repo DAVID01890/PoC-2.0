@@ -23,6 +23,10 @@ class Settings:
 
     gemini_api_key: str = ""
 
+    default_admin_email: str = "admin@luma.com"
+    default_admin_name: str = "Admin"
+    default_admin_password: str = "123456"
+
     @classmethod
     def from_env(cls, env_file: str | None = None) -> Settings:
         if env_file:
@@ -46,6 +50,9 @@ class Settings:
             api_version=os.getenv("API_VERSION", "1.0.0"),
             cors_origins=os.getenv("CORS_ORIGINS", "*"),
             gemini_api_key=os.getenv("GEMINI_API_KEY", ""),
+            default_admin_email=os.getenv("DEFAULT_ADMIN_EMAIL", "admin@luma.com"),
+            default_admin_name=os.getenv("DEFAULT_ADMIN_NAME", "Admin"),
+            default_admin_password=os.getenv("DEFAULT_ADMIN_PASSWORD", "123456"),
         )
 
 

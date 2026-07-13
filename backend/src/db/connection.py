@@ -63,12 +63,12 @@ async def init_db(settings: Settings | None = None) -> None:
 
         if count == 0:
             admin_id = str(uuid.uuid4())
-            pw_hash = bcrypt.hashpw(b"123456", bcrypt.gensalt()).decode("utf-8")
+            pw_hash = bcrypt.hashpw(s.default_admin_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
             stmt = (
                 "INSERT INTO usuarios (id, email, name, role, is_active, password_hash) "
                 "VALUES (?, ?, ?, ?, ?, ?)"
             )
-            params = (admin_id, "admin@luma.com", "Admin", "admin", 1, pw_hash)
+            params = (admin_id, s.default_admin_email, s.default_admin_name, "admin", 1, pw_hash)
             await conn_or_client.execute(stmt, params)
             if not is_turso:
                 await conn_or_client.commit()

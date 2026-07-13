@@ -498,10 +498,12 @@ const ProjectDetail = () => {
 
     // Formik: Sprints
     const sprintFormik = useFormik({
-        initialValues: { nombre: '', cantidad: 1 },
+        initialValues: { nombre: '', cantidad: 1, fecha_inicio: '', fecha_fin: '' },
         validationSchema: Yup.object({
             nombre: Yup.string().required("Nombre base del sprint requerido"),
             cantidad: Yup.number().min(1, "Mínimo 1 sprint").max(20, "Máximo 20 sprints").required(),
+            fecha_inicio: Yup.string().nullable(),
+            fecha_fin: Yup.string().nullable(),
         }),
         onSubmit: async (values, { resetForm }) => {
             if (!id) return;
@@ -510,7 +512,11 @@ const ProjectDetail = () => {
                 const baseCount = (project?.sprints || []).length;
                 const qty = Number(values.cantidad) || 1;
                 if (qty === 1) {
-                    await createSprint(id, { nombre: values.nombre });
+                    await createSprint(id, {
+                        nombre: values.nombre,
+                        fecha_inicio: values.fecha_inicio ? new Date(values.fecha_inicio).toISOString() : null,
+                        fecha_fin: values.fecha_fin ? new Date(values.fecha_fin).toISOString() : null,
+                    });
                 } else {
                     // Extract base name without trailing number for clean sequencing
                     const baseName = values.nombre.replace(/\s*\d+$/, '').trim() || values.nombre;
@@ -2249,6 +2255,32 @@ const ProjectDetail = () => {
                                         invalid={sprintFormik.touched.cantidad && !!sprintFormik.errors.cantidad}
                                     />
                                 </FormGroup>
+                                {Number(sprintFormik.values.cantidad) === 1 && (
+                                    <>
+                                        <FormGroup className="mb-3">
+                                            <Label for="fecha_inicio">Fecha de Inicio (Opcional)</Label>
+                                            <Input
+                                                id="fecha_inicio"
+                                                name="fecha_inicio"
+                                                type="date"
+                                                onChange={sprintFormik.handleChange}
+                                                onBlur={sprintFormik.handleBlur}
+                                                value={sprintFormik.values.fecha_inicio}
+                                            />
+                                        </FormGroup>
+                                        <FormGroup className="mb-3">
+                                            <Label for="fecha_fin">Fecha de Finalización (Opcional)</Label>
+                                            <Input
+                                                id="fecha_fin"
+                                                name="fecha_fin"
+                                                type="date"
+                                                onChange={sprintFormik.handleChange}
+                                                onBlur={sprintFormik.handleBlur}
+                                                value={sprintFormik.values.fecha_fin}
+                                            />
+                                        </FormGroup>
+                                    </>
+                                )}
                                 {Number(sprintFormik.values.cantidad) > 1 && (
                                     <div className="alert alert-info py-2 px-3 fs-13 mb-3">
                                         <i className="ri-information-line me-1"></i>

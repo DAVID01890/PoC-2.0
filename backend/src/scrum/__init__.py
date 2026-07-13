@@ -156,12 +156,22 @@ class ScrumFacade:
     # Sprints
     # ------------------------------------------------------------------
 
-    async def create_sprint(self, proyecto_id: str, nombre: str) -> dict | None:
+    async def create_sprint(
+        self,
+        proyecto_id: str,
+        nombre: str,
+        fecha_inicio: datetime | None = None,
+        fecha_fin: datetime | None = None,
+    ) -> dict | None:
         pid = ProyectoId(UUID(proyecto_id))
         proyecto = await self._proyecto_repo.find_by_id(pid)
         if not proyecto:
             return None
-        proyecto.create_sprint(nombre=NotEmptyString(nombre))
+        proyecto.create_sprint(
+            nombre=NotEmptyString(nombre),
+            fecha_inicio=fecha_inicio,
+            fecha_fin=fecha_fin,
+        )
         await self._proyecto_repo.save(proyecto)
         return self._proyecto_to_dict(proyecto)
 

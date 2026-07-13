@@ -29,7 +29,12 @@ class SprintController(Controller):
         scrum: ScrumFacade,
     ) -> ProyectoResponse:
         try:
-            result = await scrum.create_sprint(proyecto_id, data.nombre)
+            result = await scrum.create_sprint(
+                proyecto_id,
+                data.nombre,
+                fecha_inicio=data.fecha_inicio,
+                fecha_fin=data.fecha_fin,
+            )
         except ValidationError as exc:
             raise HTTPException(status_code=400, detail=exc.message)
         if result is None:

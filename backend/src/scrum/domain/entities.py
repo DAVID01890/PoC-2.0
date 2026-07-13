@@ -498,8 +498,13 @@ class Proyecto:
             )
         )
 
-    def create_sprint(self, nombre: NotEmptyString) -> Sprint:
-        sprint = Sprint(nombre=nombre)
+    def create_sprint(
+        self,
+        nombre: NotEmptyString,
+        fecha_inicio: datetime | None = None,
+        fecha_fin: datetime | None = None,
+    ) -> Sprint:
+        sprint = Sprint(nombre=nombre, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin)
         self._sprints[sprint.id] = sprint
         self._register_event(
             SprintCreado(

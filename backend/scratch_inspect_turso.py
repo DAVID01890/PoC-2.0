@@ -1,23 +1,23 @@
 import asyncio
-import os
-import libsql_client
-from src.entrypoint.config import Settings
+from dotenv import load_dotenv
+
+# Cargar el archivo .env de la raíz del proyecto para obtener las credenciales de Turso
+load_dotenv("../.env")
+
+from src.db.connection import get_turso_client
 
 async def test():
-    settings = Settings.from_env()
-    url = os.getenv("TURSO_DATABASE_URL", settings.turso_url)
-    token = os.getenv("TURSO_AUTH_TOKEN", settings.turso_token)
-    
-    if not url:
-        print("Turso URL not configured")
-        return
-        
-    print(f"Connecting to Turso: {url}")
-    async with libsql_client.create_client_async(url=url, auth_token=token) as client:
-        # Get schemas
-        rs = await client.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name IN ('historias', 'tareas_tecnicas')")
-        for row in rs.rows:
-            print(row[0])
-            print("-" * 50)
+    print("Conectando a Turso mediante get_turso_client...")
+    try:
+        async with get_turso_client() as client:
+            # Obtener esquemas de tablas para validar la conexión y estructura
+            rs = await client.execute("SELECT name FROM sqlite_master WHERE type='table'")
+            print("\nTablas encontradas en la base de datos Turso:")
+            for row in rs.rows:
+                print(f" - {row[0]}")
+            print("\nConexión exitosa y estructura de datos validada.")
+    except Exception as e:
+        print(f"Error al conectar con Turso: {e}")
 
-asyncio.run(test())
+if __name__ == "__main__":
+    asyncio.run(test())

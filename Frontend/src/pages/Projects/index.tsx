@@ -177,9 +177,9 @@ const ProjectsList = () => {
                                 </Col>
                                 <Col md={4} className="ms-auto">
                                     <div className="position-relative">
-                                        <Input 
-                                            type="text" 
-                                            placeholder="Buscar proyectos..." 
+                                        <Input
+                                            type="text"
+                                            placeholder="Buscar proyectos..."
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
                                             className="form-control pe-5 rounded-pill"
@@ -188,8 +188,8 @@ const ProjectsList = () => {
                                     </div>
                                 </Col>
                                 <Col md="auto">
-                                    <Button 
-                                        color="success" 
+                                    <Button
+                                        color="success"
                                         onClick={toggleModal}
                                         className="w-100"
                                     >
@@ -248,7 +248,7 @@ const ProjectsList = () => {
                                                     </div>
                                                 </div>
                                                 {proj.descripcion && (
-                                                    <p className="text-muted mb-4 fs-13" style={{ 
+                                                    <p className="text-muted mb-4 fs-13" style={{
                                                         minHeight: "38px",
                                                         display: "-webkit-box",
                                                         WebkitLineClamp: "2",

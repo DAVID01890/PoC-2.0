@@ -4,9 +4,12 @@ import {
     useReactTable,
     getCoreRowModel,
     getSortedRowModel,
+    getPaginationRowModel,
+    getFilteredRowModel,
     flexRender,
     createColumnHelper,
-    SortingState
+    SortingState,
+    PaginationState
 } from '@tanstack/react-table';
 import { Table, Badge, Input, Button, Dropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reactstrap';
 
@@ -56,6 +59,11 @@ export const SprintsTable: React.FC<SprintsTableProps> = ({
     handleDrop
 }) => {
     const [sorting, setSorting] = useState<SortingState>([]);
+    const [globalFilter, setGlobalFilter] = useState("");
+    const [pagination, setPagination] = useState<PaginationState>({
+        pageIndex: 0,
+        pageSize: 10,
+    });
     const [expandedSprints, setExpandedSprints] = useState<Record<string, boolean>>({});
     const [openMenuStoryId, setOpenMenuStoryId] = useState<string | null>(null);
     const [openMenuSprintId, setOpenMenuSprintId] = useState<string | null>(null);
@@ -216,125 +224,284 @@ export const SprintsTable: React.FC<SprintsTableProps> = ({
         columns,
         state: {
             sorting,
+            globalFilter,
+            pagination,
         },
         onSortingChange: setSorting,
+        onGlobalFilterChange: setGlobalFilter,
+        onPaginationChange: setPagination,
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        globalFilterFn: (row, columnId, filterValue) => {
+            const search = filterValue.toLowerCase();
+            const nombre = (row.getValue('nombre') as string || '').toLowerCase();
+            const status = (row.getValue('status') as string || '').toLowerCase();
+            const statusLabels: Record<string, string> = {
+                planned: 'planificado',
+                active: 'activo',
+                closed: 'cerrado',
+            };
+            return nombre.includes(search) || (statusLabels[status] || status).includes(search);
+        },
     });
 
-    return (
-        <div className="table-responsive">
-            <Table className="table-centered align-middle table-nowrap mb-0">
-                <thead className="table-light">
-                    {table.getHeaderGroups().map(headerGroup => (
-                        <tr key={headerGroup.id}>
-                            {headerGroup.headers.map(header => (
-                                <th 
-                                    key={header.id}
-                                    onClick={header.column.getCanSort() ? header.column.getToggleSortingHandler() : undefined}
-                                    style={{ cursor: header.column.getCanSort() ? 'pointer' : 'default' }}
-                                >
-                                    <div className="d-flex align-items-center gap-1">
-                                        {flexRender(header.column.columnDef.header, header.getContext())}
-                                        {header.column.getCanSort() && (
-                                            <span className="text-muted fs-10">
-                                                {{
-                                                    asc: ' ▴',
-                                                    desc: ' ▾',
-                                                }[header.column.getIsSorted() as string] ?? ' ⇅'}
-                                            </span>
-                                        )}
-                                    </div>
-                                </th>
-                            ))}
-                        </tr>
-                    ))}
-                </thead>
-                <tbody>
-                    {table.getRowModel().rows.map(row => {
-                        const sprint = row.original;
-                        const isExpanded = !!expandedSprints[sprint.id];
-                        const isDraggedOver = draggedOverSprintId === sprint.id;
-                        const sprintStories = historias.filter(h => sprint.backlog?.includes(h.id));
+    const pageCount = table.getPageCount();
+    const currentPage = pagination.pageIndex + 1;
+    const totalRows = data.length;
+    const startRow = pagination.pageIndex * pagination.pageSize + 1;
+    const endRow = Math.min((pagination.pageIndex + 1) * pagination.pageSize, totalRows);
 
-                        return (
-                            <React.Fragment key={row.id}>
-                                <tr 
-                                    className={`transition-all ${isDraggedOver ? 'table-primary bg-primary bg-opacity-20 shadow' : ''}`}
-                                    onDragOver={handleDragOver}
-                                    onDrop={(e) => handleDrop(e, sprint.id)}
-                                    onDragEnter={() => setDraggedOverSprintId(sprint.id)}
-                                    onDragLeave={() => setDraggedOverSprintId("")}
-                                    style={{ 
-                                        cursor: 'pointer',
-                                        border: isDraggedOver ? '2px solid var(--vz-primary)' : undefined
-                                    }}
-                                    onClick={() => toggleExpand(sprint.id)}
-                                >
-                                    {row.getVisibleCells().map(cell => (
-                                        <td key={cell.id}>
-                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                        </td>
-                                    ))}
-                                </tr>
-                                {isExpanded && (
-                                    <tr>
-                                        <td colSpan={columns.length} className="bg-light p-3">
-                                            <div className="ps-4">
-                                                <h6 className="fs-11 text-muted text-uppercase mb-2">Historias en este Sprint:</h6>
-                                                {sprintStories.length === 0 ? (
-                                                    <p className="text-muted fs-12 fst-italic mb-0">No hay historias asignadas a este sprint.</p>
-                                                ) : (
-                                                    <div className="d-flex flex-column gap-1">
-                                                        {sprintStories.map(story => {
-                                                            const sIndex = historias.findIndex(h => h.id === story.id);
-                                                            return (
-                                                                <div key={story.id} className="d-flex align-items-center justify-content-between p-2 bg-body-tertiary rounded border border-light-subtle">
-                                                                    <Link to={`/projects/${projectId}/stories/${story.id}`} className="fs-12 text-truncate text-body text-decoration-none" style={{ maxWidth: '70%' }}>
-                                                                        <span className="text-muted me-1">HU-{sIndex + 1}:</span>
-                                                                        <strong>{story.titulo}</strong>
-                                                                    </Link>
-                                                                    <div className="d-flex align-items-center gap-2">
-                                                                        <Badge color="info" className="px-2">{story.story_points} Puntos</Badge>
-                                                                        <Dropdown
-                                                                            isOpen={openMenuStoryId === story.id}
-                                                                            toggle={(e: any) => {
-                                                                                e.stopPropagation();
-                                                                                setOpenMenuStoryId(prev => prev === story.id ? null : story.id);
-                                                                            }}
-                                                                        >
-                                                                            <DropdownToggle tag="button" className="btn btn-ghost-secondary btn-icon btn-sm p-0" style={{ width: '24px', height: '24px' }}>
-                                                                                <i className="ri-more-2-fill fs-16"></i>
-                                                                            </DropdownToggle>
-                                                                            <DropdownMenu strategy="fixed" end>
-                                                                                <DropdownItem
-                                                                                    className="text-danger"
-                                                                                    onClick={(e) => {
+    return (
+        <div>
+            {/* Search Bar */}
+            <div className="d-flex align-items-center justify-content-between mb-3 gap-3">
+                <div className="position-relative" style={{ maxWidth: '300px', width: '100%' }}>
+                    <Input
+                        type="text"
+                        placeholder="Buscar sprint..."
+                        value={globalFilter}
+                        onChange={(e) => {
+                            setGlobalFilter(e.target.value);
+                            setPagination(prev => ({ ...prev, pageIndex: 0 }));
+                            setExpandedSprints({});
+                        }}
+                        className="form-control pe-5"
+                        style={{ borderRadius: '20px' }}
+                    />
+                    <i className="ri-search-line position-absolute top-50 translate-middle-y text-muted" style={{ right: '15px' }}></i>
+                </div>
+                <span className="text-muted fs-13">{totalRows} sprints</span>
+            </div>
+
+            <div className="table-responsive">
+                <Table className="table-centered align-middle table-nowrap mb-0">
+                    <thead className="table-light">
+                        {table.getHeaderGroups().map(headerGroup => (
+                            <tr key={headerGroup.id}>
+                                {headerGroup.headers.map(header => (
+                                    <th 
+                                        key={header.id}
+                                        onClick={header.column.getCanSort() ? header.column.getToggleSortingHandler() : undefined}
+                                        style={{ cursor: header.column.getCanSort() ? 'pointer' : 'default' }}
+                                    >
+                                        <div className="d-flex align-items-center gap-1">
+                                            {flexRender(header.column.columnDef.header, header.getContext())}
+                                            {header.column.getCanSort() && (
+                                                <span className="text-muted fs-10">
+                                                    {{
+                                                        asc: ' ▴',
+                                                        desc: ' ▾',
+                                                    }[header.column.getIsSorted() as string] ?? ' ⇅'}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </th>
+                                ))}
+                            </tr>
+                        ))}
+                    </thead>
+                    <tbody>
+                        {table.getRowModel().rows.length === 0 ? (
+                            <tr>
+                                <td colSpan={columns.length} className="text-center py-4 text-muted">
+                                    {globalFilter ? "No se encontraron sprints que coincidan con la búsqueda." : "No hay sprints."}
+                                </td>
+                            </tr>
+                        ) : (
+                            table.getRowModel().rows.map(row => {
+                                const sprint = row.original;
+                                const isExpanded = !!expandedSprints[sprint.id];
+                                const isDraggedOver = draggedOverSprintId === sprint.id;
+                                const sprintStories = historias.filter(h => sprint.backlog?.includes(h.id));
+
+                                return (
+                                    <React.Fragment key={row.id}>
+                                        <tr 
+                                            className={`transition-all ${isDraggedOver ? 'table-primary bg-primary bg-opacity-20 shadow' : ''}`}
+                                            onDragOver={handleDragOver}
+                                            onDrop={(e) => handleDrop(e, sprint.id)}
+                                            onDragEnter={() => setDraggedOverSprintId(sprint.id)}
+                                            onDragLeave={() => setDraggedOverSprintId("")}
+                                            style={{ 
+                                                cursor: 'pointer',
+                                                border: isDraggedOver ? '2px solid var(--vz-primary)' : undefined
+                                            }}
+                                            onClick={() => toggleExpand(sprint.id)}
+                                        >
+                                            {row.getVisibleCells().map(cell => (
+                                                <td key={cell.id}>
+                                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                </td>
+                                            ))}
+                                        </tr>
+                                        {isExpanded && (
+                                            <tr>
+                                                <td colSpan={columns.length} className="bg-light p-3">
+                                                    <div className="ps-4">
+                                                        <h6 className="fs-11 text-muted text-uppercase mb-2">Historias en este Sprint:</h6>
+                                                        {sprintStories.length === 0 ? (
+                                                            <p className="text-muted fs-12 fst-italic mb-0">No hay historias asignadas a este sprint.</p>
+                                                        ) : (
+                                                            <div className="d-flex flex-column gap-1">
+                                                                {sprintStories.map(story => {
+                                                                    const sIndex = historias.findIndex(h => h.id === story.id);
+                                                                    return (
+                                                                        <div key={story.id} className="d-flex align-items-center justify-content-between p-2 bg-body-tertiary rounded border border-light-subtle">
+                                                                            <Link to={`/projects/${projectId}/stories/${story.id}`} className="fs-12 text-truncate text-body text-decoration-none" style={{ maxWidth: '70%' }}>
+                                                                                <span className="text-muted me-1">HU-{sIndex + 1}:</span>
+                                                                                <strong>{story.titulo}</strong>
+                                                                            </Link>
+                                                                            <div className="d-flex align-items-center gap-2">
+                                                                                <Badge color="info" className="px-2">{story.story_points} Puntos</Badge>
+                                                                                <Dropdown
+                                                                                    isOpen={openMenuStoryId === story.id}
+                                                                                    toggle={(e: any) => {
                                                                                         e.stopPropagation();
-                                                                                        setOpenMenuStoryId(null);
-                                                                                        onDeleteStory(story.id);
+                                                                                        setOpenMenuStoryId(prev => prev === story.id ? null : story.id);
                                                                                     }}
                                                                                 >
-                                                                                    <i className="ri-delete-bin-line me-2"></i>
-                                                                                    Eliminar Historia
-                                                                                </DropdownItem>
-                                                                            </DropdownMenu>
-                                                                        </Dropdown>
-                                                                    </div>
-                                                                </div>
-                                                            );
-                                                        })}
+                                                                                    <DropdownToggle tag="button" className="btn btn-ghost-secondary btn-icon btn-sm p-0" style={{ width: '24px', height: '24px' }}>
+                                                                                        <i className="ri-more-2-fill fs-16"></i>
+                                                                                    </DropdownToggle>
+                                                                                    <DropdownMenu strategy="fixed" end>
+                                                                                        <DropdownItem
+                                                                                            className="text-danger"
+                                                                                            onClick={(e) => {
+                                                                                                e.stopPropagation();
+                                                                                                setOpenMenuStoryId(null);
+                                                                                                onDeleteStory(story.id);
+                                                                                            }}
+                                                                                        >
+                                                                                            <i className="ri-delete-bin-line me-2"></i>
+                                                                                            Eliminar Historia
+                                                                                        </DropdownItem>
+                                                                                    </DropdownMenu>
+                                                                                </Dropdown>
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                )}
-                            </React.Fragment>
-                        );
-                    })}
-                </tbody>
-            </Table>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </React.Fragment>
+                                );
+                            })
+                        )}
+                    </tbody>
+                </Table>
+            </div>
+
+            {/* Pagination */}
+            {totalRows > pagination.pageSize && (
+                <div className="d-flex align-items-center justify-content-between mt-3 flex-wrap gap-2">
+                    <div className="d-flex align-items-center gap-2">
+                        <span className="text-muted fs-13">
+                            Mostrando {startRow}-{endRow} de {totalRows}
+                        </span>
+                        <select
+                            className="form-select form-select-sm"
+                            style={{ width: 'auto' }}
+                            value={pagination.pageSize}
+                            onChange={(e) => {
+                                setPagination(prev => ({ ...prev, pageSize: Number(e.target.value), pageIndex: 0 }));
+                                setExpandedSprints({});
+                            }}
+                        >
+                            <option value={5}>5 por página</option>
+                            <option value={10}>10 por página</option>
+                            <option value={20}>20 por página</option>
+                            <option value={50}>50 por página</option>
+                        </select>
+                    </div>
+                    <div className="d-flex align-items-center gap-1">
+                        <Button
+                            type="button"
+                            color="light"
+                            size="sm"
+                            onClick={() => { table.firstPage(); setExpandedSprints({}); }}
+                            disabled={!table.getCanPreviousPage()}
+                            className="p-1"
+                            style={{ width: '32px', height: '32px' }}
+                        >
+                            <i className="ri-skip-left-line"></i>
+                        </Button>
+                        <Button
+                            type="button"
+                            color="light"
+                            size="sm"
+                            onClick={() => { table.previousPage(); setExpandedSprints({}); }}
+                            disabled={!table.getCanPreviousPage()}
+                            className="p-1"
+                            style={{ width: '32px', height: '32px' }}
+                        >
+                            <i className="ri-arrow-left-s-line"></i>
+                        </Button>
+                        {Array.from({ length: Math.min(pageCount, 5) }, (_, i) => {
+                            const startPage = Math.max(0, Math.min(currentPage - 3, pageCount - 5));
+                            const pageNum = startPage + i;
+                            if (pageNum >= pageCount) return null;
+                            return (
+                                <Button
+                                    key={pageNum}
+                                    type="button"
+                                    color={currentPage === pageNum + 1 ? 'primary' : 'light'}
+                                    size="sm"
+                                    onClick={() => { table.setPageIndex(pageNum); setExpandedSprints({}); }}
+                                    className="p-1"
+                                    style={{ width: '32px', height: '32px', fontWeight: currentPage === pageNum + 1 ? 600 : 400 }}
+                                >
+                                    {pageNum + 1}
+                                </Button>
+                            );
+                        })}
+                        <Button
+                            type="button"
+                            color="light"
+                            size="sm"
+                            onClick={() => { table.nextPage(); setExpandedSprints({}); }}
+                            disabled={!table.getCanNextPage()}
+                            className="p-1"
+                            style={{ width: '32px', height: '32px' }}
+                        >
+                            <i className="ri-arrow-right-s-line"></i>
+                        </Button>
+                        <Button
+                            type="button"
+                            color="light"
+                            size="sm"
+                            onClick={() => { table.lastPage(); setExpandedSprints({}); }}
+                            disabled={!table.getCanNextPage()}
+                            className="p-1"
+                            style={{ width: '32px', height: '32px' }}
+                        >
+                            <i className="ri-skip-right-line"></i>
+                        </Button>
+                    </div>
+                </div>
+            )}
+            {totalRows <= pagination.pageSize && totalRows > 0 && (
+                <div className="d-flex justify-content-end mt-2">
+                    <select
+                        className="form-select form-select-sm"
+                        style={{ width: 'auto' }}
+                        value={pagination.pageSize}
+                        onChange={(e) => {
+                            setPagination(prev => ({ ...prev, pageSize: Number(e.target.value), pageIndex: 0 }));
+                        }}
+                    >
+                        <option value={5}>5 por página</option>
+                        <option value={10}>10 por página</option>
+                        <option value={20}>20 por página</option>
+                        <option value={50}>50 por página</option>
+                    </select>
+                </div>
+            )}
         </div>
     );
 };

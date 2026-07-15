@@ -22,7 +22,7 @@ const ProjectDetail = () => {
     const [kanbanViewMode, setKanbanViewMode] = useState<'board' | 'table'>('board');
     const [backlogViewMode, setBacklogViewMode] = useState<'cards' | 'table'>('cards');
     const [draggingStoryId, setDraggingStoryId] = useState<string | null>(null);
-    
+
     const setError = (msg: string) => {
         setErrorState(msg);
         if (msg) {
@@ -55,6 +55,7 @@ const ProjectDetail = () => {
 
     // Modales
     const [storyModal, setStoryModal] = useState<boolean>(false);
+    const [batchStoryModal, setBatchStoryModal] = useState<boolean>(false);
     const [editStoryModal, setEditStoryModal] = useState<boolean>(false);
     const [sprintModal, setSprintModal] = useState<boolean>(false);
     const [taskModal, setTaskModal] = useState<boolean>(false);
@@ -200,10 +201,10 @@ const ProjectDetail = () => {
 
         // Check if the story is already in any sprint
         const existingSprint = sprints.find((s: any) => s.backlog && s.backlog.includes(storyId));
-        
+
         if (sprintId === 'backlog') {
             if (!existingSprint) return; // Already in backlog
-            
+
             // --- OPTIMISTIC UPDATE ---
             const previousProject = { ...project };
             const updatedProject = JSON.parse(JSON.stringify(project));
@@ -233,7 +234,7 @@ const ProjectDetail = () => {
             // --- OPTIMISTIC UPDATE ---
             const previousProject = { ...project };
             const updatedProject = JSON.parse(JSON.stringify(project));
-            
+
             // Remove from old sprint
             const oldSprint = updatedProject.sprints.find((s: any) => s.id === existingSprint.id);
             if (oldSprint && oldSprint.backlog) {
@@ -247,7 +248,7 @@ const ProjectDetail = () => {
                     newSprint.backlog.push(storyId);
                 }
             }
-            
+
             setProject(updatedProject);
             setSuccessMessage("Historia movida de Sprint correctamente.");
             setTimeout(() => setSuccessMessage(""), 3000);
@@ -482,6 +483,43 @@ const ProjectDetail = () => {
                 setTimeout(() => setSuccessMessage(""), 3000);
             } catch (err: any) {
                 setError(err.message || err || "Error al crear historia");
+            } finally {
+                setSubmitLoading(false);
+            }
+        }
+    });
+
+    const parseTitles = (text: string): string[] => {
+        return text.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+    };
+
+    // Formik: Varias historias a la vez
+    const batchStoryFormik = useFormik({
+        initialValues: { titulos: '' },
+        validationSchema: Yup.object({
+            titulos: Yup.string()
+                .test('has-titles', 'Debes ingresar al menos un título', (val) => {
+                    if (!val) return false;
+                    return parseTitles(val).length > 0;
+                }),
+        }),
+        onSubmit: async (values, { resetForm }) => {
+            if (!id) return;
+            const titles = parseTitles(values.titulos);
+            if (titles.length === 0) return;
+            try {
+                setSubmitLoading(true);
+                let response: any = null;
+                for (const titulo of titles) {
+                    response = await createUserStory(id, { titulo, story_points: 1 });
+                }
+                if (response) setProject(response);
+                resetForm();
+                setBatchStoryModal(false);
+                setSuccessMessage(`${titles.length} historias de usuario creadas correctamente.`);
+                setTimeout(() => setSuccessMessage(""), 3000);
+            } catch (err: any) {
+                setError(err.message || err || "Error al crear historias");
             } finally {
                 setSubmitLoading(false);
             }
@@ -911,7 +949,7 @@ const ProjectDetail = () => {
                                 <Row>
                                     <Col lg={8}>
                                         {/* Sección: Historias de Usuario (Clásica) */}
-                                        <Card 
+                                        <Card
                                             className={`border transition-all ${draggedOverSprintId === 'backlog' ? 'border-primary bg-primary bg-opacity-10 shadow' : 'border-light-subtle shadow-none'}`}
                                             onDragOver={handleDragOver}
                                             onDrop={(e) => handleDrop(e, 'backlog')}
@@ -921,9 +959,14 @@ const ProjectDetail = () => {
                                             <CardBody>
                                                 <div className="d-flex align-items-center justify-content-between mb-3">
                                                     <h5 className="card-title mb-0">Historias de Usuario</h5>
-                                                    <Button color="success" size="sm" onClick={() => setStoryModal(true)}>
-                                                        <i className="ri-add-line align-bottom me-1"></i> Crear Historia
-                                                    </Button>
+                                                    <div className="d-flex gap-2">
+                                                        <Button color="success" size="sm" onClick={() => setStoryModal(true)}>
+                                                            <i className="ri-add-line align-bottom me-1"></i> Crear Historia
+                                                        </Button>
+                                                        <Button color="info" size="sm" onClick={() => setBatchStoryModal(true)}>
+                                                            <i className="ri-add-line align-bottom me-1"></i> Crear Varias
+                                                        </Button>
+                                                    </div>
                                                 </div>
 
                                                 {filteredBacklogStories.filter((h: any) => h.status !== 'done' && h.status !== 'completed').length === 0 ? (
@@ -1047,10 +1090,10 @@ const ProjectDetail = () => {
                                                                                                         story.status === 'in_progress' ? 'warning' : 'secondary'
                                                                                                 }
                                                                                                 className="text-uppercase"
-                                                                                             >
+                                                                                            >
                                                                                                 {story.status === 'completed' || story.status === 'done' ? 'Completada' :
                                                                                                     story.status === 'in_progress' ? 'En Progreso' : 'Pendiente'}
-                                                                                             </Badge>
+                                                                                            </Badge>
                                                                                             <UncontrolledDropdown>
                                                                                                 <DropdownToggle tag="button" className="btn btn-link text-muted p-1">
                                                                                                     <i className="ri-more-2-fill fs-16"></i>
@@ -1335,9 +1378,14 @@ const ProjectDetail = () => {
                                             <CardBody>
                                                 <div className="d-flex align-items-center justify-content-between mb-3">
                                                     <h5 className="card-title mb-0">Historias de Usuario</h5>
-                                                    <Button color="success" size="sm" onClick={() => setStoryModal(true)}>
-                                                        <i className="ri-add-line align-bottom me-1"></i> Crear Historia
-                                                    </Button>
+                                                    <div className="d-flex gap-2">
+                                                        <Button color="success" size="sm" onClick={() => setStoryModal(true)}>
+                                                            <i className="ri-add-line align-bottom me-1"></i> Crear Historia
+                                                        </Button>
+                                                        <Button color="info" size="sm" onClick={() => setBatchStoryModal(true)}>
+                                                            <i className="ri-add-line align-bottom me-1"></i> Crear Varias
+                                                        </Button>
+                                                    </div>
                                                 </div>
 
                                                 {filteredBacklogStories.length === 0 ? (
@@ -2170,6 +2218,44 @@ const ProjectDetail = () => {
                                     <Button type="button" color="secondary" onClick={() => setStoryModal(false)}>Cancelar</Button>
                                     <Button color="success" type="submit" disabled={submitLoading}>
                                         {submitLoading ? <Spinner size="sm" /> : "Guardar Historia"}
+                                    </Button>
+                                </div>
+                            </Form>
+                        </ModalBody>
+                    </Modal>
+
+                    {/* Modal: Crear Varias Historias */}
+                    <Modal isOpen={batchStoryModal} toggle={() => setBatchStoryModal(false)} centered size="lg">
+                        <ModalHeader toggle={() => setBatchStoryModal(false)}>Crear Varias Historias de Usuario</ModalHeader>
+                        <ModalBody>
+                            <Form onSubmit={batchStoryFormik.handleSubmit}>
+                                <FormGroup className="mb-3">
+                                    <Label for="titulos">Títulos de las Historias (uno por línea)</Label>
+                                    <Input
+                                        id="titulos"
+                                        name="titulos"
+                                        type="textarea"
+                                        rows={5}
+                                        onChange={batchStoryFormik.handleChange}
+                                        onBlur={batchStoryFormik.handleBlur}
+                                        value={batchStoryFormik.values.titulos}
+                                        invalid={batchStoryFormik.touched.titulos && !!batchStoryFormik.errors.titulos}
+                                        placeholder={"Ingresa un título por línea\nEj:\nComo usuario quiero iniciar sesión\nComo admin quiero gestionar roles\n..."}
+                                        style={{ resize: 'vertical', minHeight: '120px' }}
+                                    />
+                                    {batchStoryFormik.values.titulos && parseTitles(batchStoryFormik.values.titulos).length > 0 && (
+                                        <small className="text-muted mt-1 d-block">
+                                            Se crearán <strong>{parseTitles(batchStoryFormik.values.titulos).length} historias</strong> con los mismos puntos, descripción y asignación.
+                                        </small>
+                                    )}
+                                    {batchStoryFormik.touched.titulos && batchStoryFormik.errors.titulos && (
+                                        <div className="text-danger fs-12 mt-1">{batchStoryFormik.errors.titulos as string}</div>
+                                    )}
+                                </FormGroup>
+                                <div className="d-flex justify-content-end gap-2">
+                                    <Button type="button" color="secondary" onClick={() => setBatchStoryModal(false)}>Cancelar</Button>
+                                    <Button color="success" type="submit" disabled={submitLoading}>
+                                        {submitLoading ? <Spinner size="sm" /> : "Crear Historias"}
                                     </Button>
                                 </div>
                             </Form>
